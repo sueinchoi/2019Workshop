@@ -1,0 +1,39 @@
+********** MODEL NAME
+
+Simple example with dosing input
+
+********** MODEL NOTES
+
+Provide Model Information
+
+********** MODEL STATES
+
+d/dt(X1) = -R1 + INPUT1
+d/dt(Y1) = R1
+
+d/dt(Z1) = -k*Z1 + factor*INPUT2
+
+X1(0)    = 1
+Y1(0)    = 0
+Z1(0)    = 0
+
+********** MODEL PARAMETERS
+
+factor   = 0.5
+k        = 0.1
+
+********** MODEL VARIABLES
+
+Total    = X1 + Y1
+
+********** MODEL REACTIONS
+
+R1       = k*X1
+
+********** MODEL FUNCTIONS
+
+
+********** MODEL EVENTS
+
+
+

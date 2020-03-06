@@ -1,0 +1,9 @@
+# Attributes file for dataset ../Data/dataSYS.csv
+
+atrcontents <- list()
+
+atrcontents$headerIdent <- "IGNORE,ID,TIME,DV,YTYPE,AMT,ADM,TINF,IGNORE,IGNORE,IGNORE,MDV,EVID,CENS,RATE,TAD,TIMEPOS,ADDL,II"
+
+atrcontents$headerIdentVector <- c("IGNORE", "ID", "TIME", "DV", "YTYPE", "AMT", "ADM", "TINF", "IGNORE", "IGNORE", "IGNORE", "MDV", "EVID", "CENS", "RATE", "TAD", "TIMEPOS", "ADDL", "II")
+
+

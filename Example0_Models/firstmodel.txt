@@ -1,0 +1,35 @@
+********** MODEL NAME
+
+Provide Model Name
+
+********** MODEL NOTES
+
+Provide Model Information
+
+********** MODEL STATES
+
+d/dt(X1) = -R1
+d/dt(Y1) = R1
+
+X1(0) = 1
+Y1(0) = 0
+
+********** MODEL PARAMETERS
+
+k = 0.1
+
+********** MODEL VARIABLES
+
+Total = X1 + Y1
+
+********** MODEL REACTIONS
+
+R1 = k*X1
+
+********** MODEL FUNCTIONS
+
+
+********** MODEL EVENTS
+
+
+
