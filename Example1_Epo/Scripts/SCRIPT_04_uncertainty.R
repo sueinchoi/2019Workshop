@@ -7,11 +7,8 @@ tryCatch({detach('package:RevoUtilsMath', unload=TRUE)}, error=function(x){})
 # -------------------------------------------------------------------------#
 # Load previously generated sysmodel
 # -------------------------------------------------------------------------#
-setwd("C:/Users/admin/Documents/Intiquan_QSP(2019)/IntiQuan/QSP/Example1_Epo/Scripts")
-optsys <- load_IQRsysProject("../Models/RUN1")
 
-
-
+optsys <- load_IQRsysProject("../Models/RUN2/")
 
 # -------------------------------------------------------------------------#
 # Generate likelihood profile using profile_IQRsysModel()

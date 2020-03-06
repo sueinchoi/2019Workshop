@@ -6,7 +6,7 @@ IQRinitCompliance("SCRIPT_02_exploration.R")
 # -------------------------------------------------------------------------#
 
 dataSys <- import_IQRsysData("../Data/dataRAW.csv")
-dataSys
+
 IQRsaveCSVdata(dataSys,filename="../Data/dataSYS.csv")
 
 # -------------------------------------------------------------------------#
@@ -41,7 +41,7 @@ sysobj <- setPars_IQRsysModel(sysobj,
                               ke  = 0.1,
                               kon = 0.21)
 
-getPars_IQRsysModel(sysobj)
+
 # Simulate with user-defined time points
 sysobj <- sim_IQRsysModel(sysobj, simtime = 1:300)
 

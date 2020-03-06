@@ -1,8 +1,7 @@
 library(IQRtools)
 IQRinitCompliance("SCRIPT_01_simulation.R")
 aux_version("IQRtools",minVersion = "1.0.8")
-setwd("C:/Users/admin/Dropbox/Vactocertib")
-setwd("C:/Users/admin/Documents/Intiquan_QSP(2019)/IntiQuan/QSP/Example1_Epo/Scripts")
+
 # -------------------------------------------------------------------------#
 # Have a look at the implemented model in the ODE syntax
 # -------------------------------------------------------------------------#
@@ -14,7 +13,7 @@ file.edit("Resources/model.txt")
 # -------------------------------------------------------------------------#
 
 # Create sysModel object
-sysobj <- IQRsysModel(model = "Model_DDI_final.cpp")
+sysobj <- IQRsysModel("Resources/model.txt")
 
 # Get basic information
 sysobj
@@ -26,7 +25,7 @@ sysobj
 
 # Perform a simulation (adds results to the IQRsysModel object)
 sysobj <- sim_IQRsysModel(sysobj)
-sysobj
+
 # Plot (trivial) results - nothing happens as no Epo was dosed
 plot_IQRsysModel(sysobj)
 
@@ -99,7 +98,7 @@ sysobj <- setPars_IQRsysModel(sysobj,
 # Simulate the model again with the updated parameters
 sysobj <- sim_IQRsysModel(sysobj,
                           FLAGoutputsOnly = FALSE)
-sysobj
+
 plot_IQRsysModel(sysobj)
 
 
@@ -194,4 +193,3 @@ sysobj <- sim_IQRsysModel(sysobj,
 plot_IQRsysModel(sysobj, FLAGgroupCONDITION = TRUE)
 
 
-license_IQRtools()

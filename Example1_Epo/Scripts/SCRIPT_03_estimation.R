@@ -11,105 +11,36 @@ tryCatch({detach('package:RevoUtilsMath', unload=TRUE)}, error=function(x){})
 
 # Load the model
 sysobj <- IQRsysModel(
-  model = "Imatinib_x.txt",
-  data = list(datafile = "Imatinib_sys.csv"),
+  model = "Resources/model.txt",
+  data = list(datafile = "../Data/dataSYS.csv"),
   modelSpec = list(
     POPvalues0 = c(
-      Vc_kg = 3.5,
-      Vp_kg = 1.55,
-      CLadd         = 1.8,
-      Vc_kg_MA         = 25,
-      Vp_kg_MA          = 23.2,
-      CLadd_MA         = 14,
-      SF        = 1,
-      CLint_extra = 0.1,
-      CLint_extra_MA = 34.6,
-      CLin = 1,
-      CLout = 10,
-      CLin_MA = 35,
-      CLout_MA = 38
-        ),
+      initEpo     = 1350,
+      initEpoRrel = 0.01,
+      kde         = 0.01,
+      kdi         = 0.01,
+      ke          = 0.01,
+      kex         = 0.01,
+      koff        = 0.01,
+      kon         = 0.01,
+      kt          = 1
+    ),
     errorModel = list(
-      OUTPUT1 = c("absrel", 1, 0.5),
-      OUTPUT2 = c("absrel", 1, 0.5)
+      OUTPUT1 = c("abs", 0.1),
+      OUTPUT2 = c("abs", 0.1),
+      OUTPUT3 = c("abs", 0.1)
     )
   )
 )
 
-
 # Check if set-up looks as expected
+getPars_IQRsysModel(sysobj)
 
-a <- getPars_IQRsysModel(sysobj)
-a <- as.data.frame(a)
+# Create estimation object and project
 est <- as_IQRsysEst(sysobj)
 
 # Create sys project and prepare to run a single estimation
-proj <- IQRsysProject(est, "RUN3_1", opt.nfits = 1)
-
-proj <- IQRsysProject(est, "RUN3_2",
-                      opt.nfits = 8,
-                      opt.sd = 2,
-                      FLAGprofileLL = TRUE)
-
-optsys <- run_IQRsysProject(proj, ncores = 8)
-
-
-
-optsys <- profile_IQRsysModel(optsys, ncores = 8,
-                              fixed = c("CL_int_extra", "CLint_extra_MA", "KA"))
-
-
-
-
-#####
-# Scenario 1: initEpo assumed to be known
-optsys <- profile_IQRsysModel(optsys, ncores = 8,
-                              fixed = c("CLint_extra_MA", "KA"))
-
-plotProfile_IQRsysModel(optsys)
-
-
-# Scenario 2: initEpo and kex assumed to be known
-optsys <- profile_IQRsysModel(optsys, ncores = 8,
-                              fixed = c("initEpo", "kex"))
-
-plotProfile_IQRsysModel(optsys)
-
-
-# -------------------------------------------------------------------------#
-# initEpo: lets assume it was subsequently measured to be 160
-# kex:     lets assume the whole team agreed that kex=0.001 is the correct value
-# -------------------------------------------------------------------------#
-
-# Convert previous model into an estimation object
-# and set parameters according to new information - fix them and do not estimate them
-newest <- as_IQRsysEst(
-  sysModel = sysobj,
-  modelSpec = modelSpec_IQRest(
-    POPvalues0  = c(CLint_extra_MA = 34.6, SF = 2, KA = 1.5),
-    POPestimate = c(CLint_extra_MA = 0, SF = 1, KA = 0)
-  )
-)
-
-newest
-
-# Generate and run the parameter estimation
-proj <- IQRsysProject(newest, projectPath = "RUN3_kexfixed", opt.nfits = 24, ncores = 8)
-optsys2 <- run_IQRsysProject(proj)
-
-# Generate new profiles
-optsys2 <- profile_IQRsysModel(optsys2, ncores = 8)
-plotProfile_IQRsysModel(optsys2)
-
-
-
-
-
-
-
-
-
-
+proj <- IQRsysProject(est, "../Models/RUN1", opt.nfits = 1)
 
 # Run sys project
 optsys <- run_IQRsysProject(proj)
@@ -120,27 +51,26 @@ optsys <- run_IQRsysProject(proj)
 # -------------------------------------------------------------------------#
 
 # Inspect the estimated parameters
-getPars_IQRsysModel(optsys2)
+getPars_IQRsysModel(optsys)
 
 # Inspect data and optimized prediction for estimated parameters
-optsys <- sim_IQRsysModel(optsys2, simtime = 1:50)
+optsys <- sim_IQRsysModel(optsys, simtime = 1:300)
 
 # Plot results
 plot_IQRsysModel(optsys)
 
-optsys
+
 
 # -------------------------------------------------------------------------#
 # Create multi-start project with 36 parameter fits from randomly chosen initial
 # guesses. The original initial guess is always part of these multiple guesses
 # as_IQRsysProject(., opt.nfits, opt.sd) ----
 # -------------------------------------------------------------------------#
-getwd()
 
-proj <- IQRsysProject(est, "RUN3_2",
-                      opt.nfits = 8,
-                      opt.sd = 2,
-                      FLAGprofileLL = TRUE)
+
+proj <- IQRsysProject(est, "../Models/RUN2",
+                      opt.nfits = 36,
+                      opt.sd = 2)
 
 optsys <- run_IQRsysProject(proj, ncores = 8)
 
@@ -172,9 +102,9 @@ plotPred_IQRsysModel(optsys)
 # plotWRES_IQRsysModel(optsys) and plotDVPRED_IQRsysModel(optsys) ----
 # -------------------------------------------------------------------------#
 
-plotWRES_IQRsysModel(optsys, OUTPUT = 2)
+plotWRES_IQRsysModel(optsys, OUTPUT = 1)
 
-plotDVPRED_IQRsysModel(optsys, OUTPUT = 2)
+plotDVPRED_IQRsysModel(optsys, OUTPUT = 1)
 
 
 # -------------------------------------------------------------------------#
@@ -185,13 +115,13 @@ plotDVPRED_IQRsysModel(optsys, OUTPUT = 2)
 plotWaterfall_IQRsysModel(optsys)
 
 # Switch to another local optimum
-optsys <- switchOpt_IQRsysModel(optsys, optimum = 11)
+optsys <- switchOpt_IQRsysModel(optsys, optimum = 19)
 
 # Print parameters of the selected optimum
 getPars_IQRsysModel(optsys)
 
 # Simulate for the slected optimum and plot
-optsys <- sim_IQRsysModel(optsys, simtime = 1:50)
+optsys <- sim_IQRsysModel(optsys, simtime = 1:300)
 plot_IQRsysModel(optsys)
 
 
@@ -202,5 +132,5 @@ optsys <- switchOpt_IQRsysModel(optsys, optimum = 1)
 getPars_IQRsysModel(optsys)
 
 # Simulate for the slected optimum and plot
-optsys <- sim_IQRsysModel(optsys, simtime = 1:50)
+optsys <- sim_IQRsysModel(optsys, simtime = 1:300)
 plot_IQRsysModel(optsys)
