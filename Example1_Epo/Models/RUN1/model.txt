@@ -1,0 +1,74 @@
+********** MODEL NAME
+
+Becker et al
+
+********** MODEL NOTES
+
+The model by Becker et al. (2010) shows that
+rapid EpoR turnover and large intracellular receptor
+pools enables linear ligand response.
+
+********** MODEL STATES
+
+d/dt(Epo) = initEpo*INPUT1 + Recycle + Decay - BindEpo
+d/dt(EpoR) = Recycle + Decay - Turnover + initEpo*initEpoRrel*kt - BindEpo
+d/dt(EpoEpoR) = BindEpo - Decay - Internalize
+d/dt(EpoEpoRi) = Internalize - DegradeInternal - DegradeExternal - Recycle
+d/dt(dEpoi) = DegradeInternal
+d/dt(dEpoe) = DegradeExternal
+ 
+Epo(0) = 0
+EpoR(0) = initEpo*initEpoRrel
+EpoEpoR(0) = 0
+EpoEpoRi(0) = 0
+dEpoi(0) = 0
+dEpoe(0) = 0
+ 
+********** MODEL PARAMETERS
+
+initEpo = 1350
+initEpoRrel = 0.129
+kD = 142
+kde = 0.012
+kdi = 0.0013
+ke = 0.055
+kex = 0.00058
+koff = 0.081
+kon = 0.15
+kt = 0.016
+offset = 1e-05
+scale = 0.98
+INPUT1 = 0
+Tlag1 = 0
+ 
+********** MODEL VARIABLES
+
+Epoext = Epo + dEpoe
+Epoint = EpoEpoRi + dEpoi
+Epoextcpm = log10(offset + (Epoext*scale)/initEpo)
+Epomemcpm = log10(offset + (EpoEpoR*scale)/initEpo)
+Epointcpm = log10(offset + (Epoint*scale)/initEpo)
+OUTPUT1 = Epoextcpm
+OUTPUT2 = Epomemcpm
+OUTPUT3 = Epointcpm
+ 
+********** MODEL REACTIONS
+
+Recycle = EpoEpoRi*kex
+Decay = EpoEpoR*koff
+BindEpo = Epo*EpoR*kon
+Turnover = EpoR*kt
+Internalize = EpoEpoR*ke
+DegradeInternal = EpoEpoRi*kdi
+DegradeExternal = EpoEpoRi*kde
+ 
+********** MODEL FUNCTIONS
+
+ 
+********** MODEL EVENTS
+
+ 
+********** MODEL INITIAL ASSIGNMENTS
+
+ 
+

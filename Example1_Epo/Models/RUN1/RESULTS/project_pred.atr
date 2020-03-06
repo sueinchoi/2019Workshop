@@ -1,0 +1,13 @@
+# Attributes file for dataset ./RESULTS/project_pred.csv
+
+atrcontents <- list()
+
+atrcontents$paramNames <- c("initEpo", "initEpoRrel", "kde", "kdi", "ke", "kex", "koff", "kon", "kt")
+
+atrcontents$localNames <- character(0)
+
+atrcontents$ALT_NAMES_USED <- c("XPRED", "XWRES", "IPRED", "IWRES")
+
+atrcontents$ALT_NAMES_ORIG <- c("XPRED", "XWRES", "IPRED", "IWRES")
+
+

@@ -1,0 +1,29 @@
+<TT>   Sysfit parameter estimates                                                           
+       =====================================================================================
+
+<TH>   PARAMETER                | VALUE   | RSE   | SHRINKAGE | COMMENT                     
+       -------------------------------------------------------------------------------------
+<TR>                            |         |       |           |                             
+<TR>   **Typical parameters**   |         |       |           |                             
+<TR>   initEpo                  | 431     | 818%  | -         | -                           
+<TR>   initEpoRrel              | 0.0453  | 800%  | -         | -                           
+<TR>   kde                      | 0.0123  | 6.56% | -         | -                           
+<TR>   kdi                      | 0.00208 | 23.3% | -         | -                           
+<TR>   ke                       | 0.0541  | 5.02% | -         | -                           
+<TR>   kex                      | 0.0015  | 53%   | -         | -                           
+<TR>   koff                     | 0.305   | 36.7% | -         | -                           
+<TR>   kon                      | 0.00319 | 818%  | -         | -                           
+<TR>   kt                       | 46.4    | 973%  | -         | -                           
+<TR>                            |         |       |           |                             
+<TR>   **Residual variability** |         |       |           |                             
+<TR>   error_ADD1               | 0.0109  | 14.7% | -2%       | Additive Error - Epo_ext_cpm
+<TR>   error_ADD2               | 0.0497  | 14.8% | -2%       | Additive Error - Epo_mem_cpm
+<TR>   error_ADD3               | 0.0583  | 15%   | -2%       | Additive Error - Epo_int_cpm
+<TR>                            |         |       |           |                             
+<TR>   **Model metrics**        |         |       |           |                             
+<TR>   OBJ                      | -293    |       |           |                             
+<TR>   BIC                      | -241    |       |           |                             
+<TR>   AIC                      | -269    |       |           |                             
+<TR>                            |         |       |           |                             
+       -------------------------------------------------------------------------------------
+<TF>    ../Models/RUN1, RSE (relative standard error), CI (confidence interval), Significant digits: 3, omega values reported in standard deviations.

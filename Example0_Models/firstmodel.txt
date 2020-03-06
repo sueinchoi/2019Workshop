@@ -16,7 +16,7 @@ Y1(0) = 0
 
 ********** MODEL PARAMETERS
 
-k = 0.1
+k = 0.2
 
 ********** MODEL VARIABLES
 
