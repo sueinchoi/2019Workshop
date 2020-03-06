@@ -1,0 +1,857 @@
+********** MODEL NAME
+
+Shah et al mAb PBPK model 2012
+
+********** MODEL NOTES
+
+J Pharmacokinet Pharmacodyn (2012) 39:67-86 DOI 10.1007/s10928-011-9232-2
+
+Towards a platform PBPK model to characterize the plasma and tissue disposition of monoclonal antibodies in preclinical
+species and human. AutheDhaval K. Shah, Alison M. Betts
+
+Modifications of the model:
+- Allow for bodyweight parameter and use allometric scaling with defined exponents to scale
+  volumes and rates.
+- Including a tumor tissue.
+    - Constant tumor size. Time dependent tumor volume could be accounted for in the model.
+    - No drug binding to surface bound targets considered yet.
+    - Tumor volume and blood flow implemented with weight scaling to be more consistent with other tissues
+      and allow easier coding.
+- Dosing in mg and outputs for fitting in ug/mL
+    - Requires definition of MW
+- Calculation of parameters based on function of others instead of numerical definition
+
+Input 1: IV
+Input 2: SC
+
+********** MODEL STATES
+
+# PLASMA
+# ------
+# IV dosing assumed into plasma compartment. Scaling done from mg to M
+# mg/1000 -> g * MW -> mol / volume -> molar
+
+d/dt(CPL) = (((TUMOR_PLQ-TUMOR_LF)*CTUMOR_V)/PL_V)+(((HE_PLQ-HE_LF)*CHE_V)/PL_V)+(((KI_PLQ-KI_LF)*CKI_V)/PL_V)+(((MU_PLQ-MU_LF)*CMU_V)/PL_V)+(((SK_PLQ-SK_LF)*CSK_V)/PL_V)+(((BR_PLQ-BR_LF)*CBR_V)/PL_V)+(((AD_PLQ-AD_LF)*CAD_V)/PL_V)+(((TH_PLQ-TH_LF)*CTH_V)/PL_V)+((((LIV_PLQ-LIV_LF)+(SI_PLQ-SI_LF)+(LI_PLQ-LI_LF)+(SP_PLQ-SP_LF)+(PA_PLQ-PA_LF))*CLIV_V)/PL_V)+(((BO_PLQ-BO_LF)*CBO_V)/PL_V)+(((OTLN_PLQ-OT_LF)*COT_V)/PL_V)-(((LU_PLQ+LU_LF)*CPL)/PL_V)+(LN_LF*CLN)/PL_V + 1/(1000*MW*((PL_TV_NOM - LU_VV_NOM - HE_VV_NOM - KI_VV_NOM - MU_VV_NOM - SK_VV_NOM - BR_VV_NOM - AD_VV_NOM - TH_VV_NOM - SI_VV_NOM - LI_VV_NOM - SP_VV_NOM - PA_VV_NOM - LIV_VV_NOM - BO_VV_NOM - OT_VV_NOM) * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)))*INPUT1
+
+
+# BLOOD CELL
+# ----------
+d/dt(CBC) = ((TUMOR_BCQ*CTUMOR_BC)/BC_V)+((HE_BCQ*CHE_BC)/BC_V)+((KI_BCQ*CKI_BC)/BC_V)+((MU_BCQ*CMU_BC)/BC_V)+((SK_BCQ*CSK_BC)/BC_V)+((BR_BCQ*CBR_BC)/BC_V)+((AD_BCQ*CAD_BC)/BC_V)+((TH_BCQ*CTH_BC)/BC_V)+((BO_BCQ*CBO_BC)/BC_V)+((OTLN_BCQ*COT_BC)/BC_V)+(((LIV_BCQ+SI_BCQ+LI_BCQ+SP_BCQ+PA_BCQ)*CLIV_BC)/BC_V)-((LU_BCQ*CBC)/BC_V)
+
+
+#	LUNG
+#	----
+
+#	Vascular
+d/dt(CLU_V) = (((LU_PLQ+LU_LF)*CPL)/LU_VV)-(((LU_PLQ)*CLU_V)/LU_VV)-(((1-LU_VRC)*LU_LF*CLU_V)/LU_VV)-((LU_CL_UP*CLU_V)/LU_VV)+((LU_CL_UP*FR*CLU_E_B)/LU_VV)
+
+#	Endosomal
+d/dt(CLU_E_U) = ((LU_CL_UP*(CLU_V+CLU_I))/LU_EV)-(Kon_FcRn*CLU_E_U*(LU_FcRn+FcRn))+(Koff_FcRn*CLU_E_B)-(Kdeg_IgG*CLU_E_U)
+
+d/dt(CLU_E_B) = (Kon_FcRn*CLU_E_U*(LU_FcRn+FcRn))-(Koff_FcRn*CLU_E_B)-((LU_CL_UP*CLU_E_B)/LU_EV)
+
+# Interstitial
+d/dt(CLU_I) = (((1-LU_VRC)*LU_LF*CLU_V)/LU_IV)-(((1-LU_ISRC)*LU_LF*CLU_I)/LU_IV)+((LU_CL_UP*(1-FR)*CLU_E_B)/LU_IV)-((LU_CL_UP*CLU_I)/LU_IV)
+
+# Blood cell
+d/dt(CLU_BC) = ((LU_BCQ*(CBC-CLU_BC))/LU_BV)
+
+
+#	HEART
+# -----
+
+# Vascular
+d/dt(CHE_V) = ((HE_PLQ*CLU_V)/HE_VV)-(((HE_PLQ-HE_LF)*CHE_V)/HE_VV)-(((1-HE_VRC)*HE_LF*CHE_V)/HE_VV)-((HE_CL_UP*CHE_V)/HE_VV)+((HE_CL_UP*FR*CHE_E_B)/HE_VV)
+
+# Endosomal
+d/dt(CHE_E_U) = ((HE_CL_UP*(CHE_V+CHE_I))/HE_EV)-(Kon_FcRn*CHE_E_U*(HE_FcRn+FcRn))+(Koff_FcRn*CHE_E_B)-(Kdeg_IgG*CHE_E_U)
+
+d/dt(CHE_E_B) = (Kon_FcRn*CHE_E_U*(HE_FcRn+FcRn))-(Koff_FcRn*CHE_E_B)-((HE_CL_UP*CHE_E_B)/HE_EV)
+
+# Interstitial
+d/dt(CHE_I) = (((1-HE_VRC)*HE_LF*CHE_V)/HE_IV)-(((1-HE_ISRC)*HE_LF*CHE_I)/HE_IV)+((HE_CL_UP*(1-FR)*CHE_E_B)/HE_IV)-((HE_CL_UP*CHE_I)/HE_IV)
+
+# Blood cell
+d/dt(CHE_BC) = ((HE_BCQ*(CLU_BC-CHE_BC))/HE_BV)
+
+
+#	KIDNEY
+# ------
+
+# Vascular
+d/dt(CKI_V) = ((KI_PLQ*CLU_V)/KI_VV)-(((KI_PLQ-KI_LF)*CKI_V)/KI_VV)-(((1-KI_VRC)*KI_LF*CKI_V)/KI_VV)-((KI_CL_UP*CKI_V)/KI_VV)+((KI_CL_UP*FR*CKI_E_B)/KI_VV)
+
+# Endosomal
+d/dt(CKI_E_U) = ((KI_CL_UP*(CKI_V+CKI_I))/KI_EV)-(Kon_FcRn*CKI_E_U*(KI_FcRn+FcRn))+(Koff_FcRn*CKI_E_B)-(Kdeg_IgG*CKI_E_U)
+
+d/dt(CKI_E_B) = (Kon_FcRn*CKI_E_U*(KI_FcRn+FcRn))-(Koff_FcRn*CKI_E_B)-((KI_CL_UP*CKI_E_B)/KI_EV)
+
+# Interstitial
+d/dt(CKI_I) = (((1-KI_VRC)*KI_LF*CKI_V)/KI_IV)-(((1-KI_ISRC)*KI_LF*CKI_I)/KI_IV)+((KI_CL_UP*(1-FR)*CKI_E_B)/KI_IV)-((KI_CL_UP*CKI_I)/KI_IV)
+
+# Blood cell
+d/dt(CKI_BC) = ((KI_BCQ*(CLU_BC-CKI_BC))/KI_BV)
+
+
+#	MUSCLE
+# ------
+
+# Vascular
+d/dt(CMU_V) = ((MU_PLQ*CLU_V)/MU_VV)-(((MU_PLQ-MU_LF)*CMU_V)/MU_VV)-(((1-MU_VRC)*MU_LF*CMU_V)/MU_VV)-((MU_CL_UP*CMU_V)/MU_VV)+((MU_CL_UP*FR*CMU_E_B)/MU_VV)
+
+# Endosomal
+d/dt(CMU_E_U) = ((MU_CL_UP*(CMU_V+CMU_I))/MU_EV)-(Kon_FcRn*CMU_E_U*(MU_FcRn+FcRn))+(Koff_FcRn*CMU_E_B)-(Kdeg_IgG*CMU_E_U)
+
+d/dt(CMU_E_B) = (Kon_FcRn*CMU_E_U*(MU_FcRn+FcRn))-(Koff_FcRn*CMU_E_B)-((MU_CL_UP*CMU_E_B)/MU_EV)
+
+# Interstitial
+d/dt(CMU_I) = (((1-MU_VRC)*MU_LF*CMU_V)/MU_IV)-(((1-MU_ISRC)*MU_LF*CMU_I)/MU_IV)+((MU_CL_UP*(1-FR)*CMU_E_B)/MU_IV)-((MU_CL_UP*CMU_I)/MU_IV)
+
+# Blood cell
+d/dt(CMU_BC) = ((MU_BCQ*(CLU_BC-CMU_BC))/MU_BV)
+
+
+#	SKIN
+# ----
+
+# Vascular
+d/dt(CSK_V) = ((SK_PLQ*CLU_V)/SK_VV)-(((SK_PLQ-SK_LF)*CSK_V)/SK_VV)-(((1-SK_VRC)*SK_LF*CSK_V)/SK_VV)-((SK_CL_UP*CSK_V)/SK_VV)+((SK_CL_UP*FR*CSK_E_B)/SK_VV)
+
+# Endosomal
+d/dt(CSK_E_U) = ((SK_CL_UP*(CSK_V+CSK_I))/SK_EV)-(Kon_FcRn*CSK_E_U*(SK_FcRn+FcRn))+(Koff_FcRn*CSK_E_B)-(Kdeg_IgG*CSK_E_U)
+
+d/dt(CSK_E_B) = (Kon_FcRn*CSK_E_U*(SK_FcRn+FcRn))-(Koff_FcRn*CSK_E_B)-((SK_CL_UP*CSK_E_B)/SK_EV)
+
+# Interstitial
+# SC dosing assumed into plasma compartment. Scaling done from mg to M
+# mg/1000 -> g * MW -> mol / volume -> molar
+d/dt(CSK_I) = (((1-SK_VRC)*SK_LF*CSK_V)/SK_IV)-(((1-SK_ISRC)*SK_LF*CSK_I)/SK_IV)+((SK_CL_UP*(1-FR)*CSK_E_B)/SK_IV)-((SK_CL_UP*CSK_I)/SK_IV) + 1/(1000*MW*(SK_IV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)))*INPUT2
+
+# Blood cell
+d/dt(CSK_BC) = ((SK_BCQ*(CLU_BC-CSK_BC))/SK_BV)
+
+
+#	BRAIN
+# -----
+
+# Vascular
+d/dt(CBR_V) = ((BR_PLQ*CLU_V)/BR_VV)-(((BR_PLQ-BR_LF)*CBR_V)/BR_VV)-(((1-BR_VRC)*BR_LF*CBR_V)/BR_VV)-((BR_CL_UP*CBR_V)/BR_VV)+((BR_CL_UP*FR*CBR_E_B)/BR_VV)
+
+# Endosomal
+d/dt(CBR_E_U) = ((BR_CL_UP*(CBR_V+CBR_I))/BR_EV)-(Kon_FcRn*CBR_E_U*(BR_FcRn+FcRn))+(Koff_FcRn*CBR_E_B)-(Kdeg_IgG*CBR_E_U)
+
+d/dt(CBR_E_B) = (Kon_FcRn*CBR_E_U*(BR_FcRn+FcRn))-(Koff_FcRn*CBR_E_B)-((BR_CL_UP*CBR_E_B)/BR_EV)
+
+# Interstitial
+d/dt(CBR_I) = (((1-BR_VRC)*BR_LF*CBR_V)/BR_IV)-(((1-BR_ISRC)*BR_LF*CBR_I)/BR_IV)+((BR_CL_UP*(1-FR)*CBR_E_B)/BR_IV)-((BR_CL_UP*CBR_I)/BR_IV)
+
+# Blood cell
+d/dt(CBR_BC) = ((BR_BCQ*(CLU_BC-CBR_BC))/BR_BV)
+
+
+#	ADIPOSE
+# -------
+
+# Vascular
+d/dt(CAD_V) = ((AD_PLQ*CLU_V)/AD_VV)-(((AD_PLQ-AD_LF)*CAD_V)/AD_VV)-(((1-AD_VRC)*AD_LF*CAD_V)/AD_VV)-((AD_CL_UP*CAD_V)/AD_VV)+((AD_CL_UP*FR*CAD_E_B)/AD_VV)
+
+# Endosomal
+d/dt(CAD_E_U) = ((AD_CL_UP*(CAD_V+CAD_I))/AD_EV)-(Kon_FcRn*CAD_E_U*(AD_FcRn+FcRn))+(Koff_FcRn*CAD_E_B)-(Kdeg_IgG*CAD_E_U)
+
+d/dt(CAD_E_B) = (Kon_FcRn*CAD_E_U*(AD_FcRn+FcRn))-(Koff_FcRn*CAD_E_B)-((AD_CL_UP*CAD_E_B)/AD_EV)
+
+# Interstitial
+d/dt(CAD_I) = (((1-AD_VRC)*AD_LF*CAD_V)/AD_IV)-(((1-AD_ISRC)*AD_LF*CAD_I)/AD_IV)+((AD_CL_UP*(1-FR)*CAD_E_B)/AD_IV)-((AD_CL_UP*CAD_I)/AD_IV)
+
+# Blood cell
+d/dt(CAD_BC) = ((AD_BCQ*(CLU_BC-CAD_BC))/AD_BV)
+
+
+# THYMUS
+# ------
+
+# Vascular
+d/dt(CTH_V) = ((TH_PLQ*CLU_V)/TH_VV)-(((TH_PLQ-TH_LF)*CTH_V)/TH_VV)-(((1-TH_VRC)*TH_LF*CTH_V)/TH_VV)-((TH_CL_UP*CTH_V)/TH_VV)+((TH_CL_UP*FR*CTH_E_B)/TH_VV)
+
+# Endosomal
+d/dt(CTH_E_U) = ((TH_CL_UP*(CTH_V+CTH_I))/TH_EV)-(Kon_FcRn*CTH_E_U*(TH_FcRn+FcRn))+(Koff_FcRn*CTH_E_B)-(Kdeg_IgG*CTH_E_U)
+
+d/dt(CTH_E_B) = (Kon_FcRn*CTH_E_U*(TH_FcRn+FcRn))-(Koff_FcRn*CTH_E_B)-((TH_CL_UP*CTH_E_B)/TH_EV)
+
+# Interstitial
+d/dt(CTH_I) = (((1-TH_VRC)*TH_LF*CTH_V)/TH_IV)-(((1-TH_ISRC)*TH_LF*CTH_I)/TH_IV)+((TH_CL_UP*(1-FR)*CTH_E_B)/TH_IV)-((TH_CL_UP*CTH_I)/TH_IV)
+
+# Blood cell
+d/dt(CTH_BC) = ((TH_BCQ*(CLU_BC-CTH_BC))/TH_BV)
+
+
+#	SMALL Intestine
+# ---------------
+
+# Vascular
+d/dt(CSI_V) = ((SI_PLQ*CLU_V)/SI_VV)-(((SI_PLQ-SI_LF)*CSI_V)/SI_VV)-(((1-SI_VRC)*SI_LF*CSI_V)/SI_VV)-((SI_CL_UP*CSI_V)/SI_VV)+((SI_CL_UP*FR*CSI_E_B)/SI_VV)
+
+# Endosomal
+d/dt(CSI_E_U) = ((SI_CL_UP*(CSI_V+CSI_I))/SI_EV)-(Kon_FcRn*CSI_E_U*(SI_FcRn+FcRn))+(Koff_FcRn*CSI_E_B)-(Kdeg_IgG*CSI_E_U)
+
+d/dt(CSI_E_B) = (Kon_FcRn*CSI_E_U*(SI_FcRn+FcRn))-(Koff_FcRn*CSI_E_B)-((SI_CL_UP*CSI_E_B)/SI_EV)
+
+# Interstitial
+d/dt(CSI_I) = (((1-SI_VRC)*SI_LF*CSI_V)/SI_IV)-(((1-SI_ISRC)*SI_LF*CSI_I)/SI_IV)+((SI_CL_UP*(1-FR)*CSI_E_B)/SI_IV)-((SI_CL_UP*CSI_I)/SI_IV)
+
+# Blood cell
+d/dt(CSI_BC) = ((SI_BCQ*(CLU_BC-CSI_BC))/SI_BV)
+
+
+#	LARGE Intestine
+# ---------------
+
+# Vascular
+d/dt(CLI_V) = ((LI_PLQ*CLU_V)/LI_VV)-(((LI_PLQ-LI_LF)*CLI_V)/LI_VV)-(((1-LI_VRC)*LI_LF*CLI_V)/LI_VV)-((LI_CL_UP*CLI_V)/LI_VV)+((LI_CL_UP*FR*CLI_E_B)/LI_VV)
+
+# Endosomal
+d/dt(CLI_E_U) = ((LI_CL_UP*(CLI_V+CLI_I))/LI_EV)-(Kon_FcRn*CLI_E_U*(LI_FcRn+FcRn))+(Koff_FcRn*CLI_E_B)-(Kdeg_IgG*CLI_E_U)
+
+d/dt(CLI_E_B) = (Kon_FcRn*CLI_E_U*(LI_FcRn+FcRn))-(Koff_FcRn*CLI_E_B)-((LI_CL_UP*CLI_E_B)/LI_EV)
+
+# Interstitial
+d/dt(CLI_I) = (((1-LI_VRC)*LI_LF*CLI_V)/LI_IV)-(((1-LI_ISRC)*LI_LF*CLI_I)/LI_IV)+((LI_CL_UP*(1-FR)*CLI_E_B)/LI_IV)-((LI_CL_UP*CLI_I)/LI_IV)
+
+# Blood cell
+d/dt(CLI_BC) = ((LI_BCQ*(CLU_BC-CLI_BC))/LI_BV)
+
+
+#	SPLEEN
+# ------
+
+# Vascular
+d/dt(CSP_V) = ((SP_PLQ*CLU_V)/SP_VV)-(((SP_PLQ-SP_LF)*CSP_V)/SP_VV)-(((1-SP_VRC)*SP_LF*CSP_V)/SP_VV)-((SP_CL_UP*CSP_V)/SP_VV)+((SP_CL_UP*FR*CSP_E_B)/SP_VV)
+
+# Endosomal
+d/dt(CSP_E_U) = ((SP_CL_UP*(CSP_V+CSP_I))/SP_EV)-(Kon_FcRn*CSP_E_U*(SP_FcRn+FcRn))+(Koff_FcRn*CSP_E_B)-(Kdeg_IgG*CSP_E_U)
+
+d/dt(CSP_E_B) = (Kon_FcRn*CSP_E_U*(SP_FcRn+FcRn))-(Koff_FcRn*CSP_E_B)-((SP_CL_UP*CSP_E_B)/SP_EV)
+
+# Interstitial
+d/dt(CSP_I) = (((1-SP_VRC)*SP_LF*CSP_V)/SP_IV)-(((1-SP_ISRC)*SP_LF*CSP_I)/SP_IV)+((SP_CL_UP*(1-FR)*CSP_E_B)/SP_IV)-((SP_CL_UP*CSP_I)/SP_IV)
+
+# Blood cell
+d/dt(CSP_BC) = ((SP_BCQ*(CLU_BC-CSP_BC))/SP_BV)
+
+
+#	PANCREAS
+# --------
+
+# Vascular
+d/dt(CPA_V) = ((PA_PLQ*CLU_V)/PA_VV)-(((PA_PLQ-PA_LF)*CPA_V)/PA_VV)-(((1-PA_VRC)*PA_LF*CPA_V)/PA_VV)-((PA_CL_UP*CPA_V)/PA_VV)+((PA_CL_UP*FR*CPA_E_B)/PA_VV)
+
+# Endosomal
+d/dt(CPA_E_U) = ((PA_CL_UP*(CPA_V+CPA_I))/PA_EV)-(Kon_FcRn*CPA_E_U*(PA_FcRn+FcRn))+(Koff_FcRn*CPA_E_B)-(Kdeg_IgG*CPA_E_U)
+
+d/dt(CPA_E_B) = (Kon_FcRn*CPA_E_U*(PA_FcRn+FcRn))-(Koff_FcRn*CPA_E_B)-((PA_CL_UP*CPA_E_B)/PA_EV)
+
+# Interstitial
+d/dt(CPA_I) = (((1-PA_VRC)*PA_LF*CPA_V)/PA_IV)-(((1-PA_ISRC)*PA_LF*CPA_I)/PA_IV)+((PA_CL_UP*(1-FR)*CPA_E_B)/PA_IV)-((PA_CL_UP*CPA_I)/PA_IV)
+
+# Blood cell
+d/dt(CPA_BC) = ((PA_BCQ*(CLU_BC-CPA_BC))/PA_BV)
+
+
+#	LIVER
+# -----
+
+# Vascular
+d/dt(CLIV_V) = (((LIV_PLQ)*CLU_V)/LIV_VV)-((((LIV_PLQ-LIV_LF)+(SI_PLQ-SI_LF)+(LI_PLQ-LI_LF)+(SP_PLQ-SP_LF)+(PA_PLQ-PA_LF))*CLIV_V)/LIV_VV)+(((SI_PLQ-SI_LF)*CSI_V)/LIV_VV)+(((LI_PLQ-LI_LF)*CLI_V)/LIV_VV)+(((SP_PLQ-SP_LF)*CSP_V)/LIV_VV)+(((PA_PLQ-PA_LF)*CPA_V)/LIV_VV)-(((1-LIV_VRC)*LIV_LF*CLIV_V)/LIV_VV)-((LIV_CL_UP*CLIV_V)/LIV_VV)+((LIV_CL_UP*FR*CLIV_E_B)/LIV_VV)
+
+# Endosomal
+d/dt(CLIV_E_U) = ((LIV_CL_UP*(CLIV_V+CLIV_I))/LIV_EV)-(Kon_FcRn*CLIV_E_U*(LIV_FcRn+FcRn))+(Koff_FcRn*CLIV_E_B)-(Kdeg_IgG*CLIV_E_U)
+
+d/dt(CLIV_E_B) = (Kon_FcRn*CLIV_E_U*(LIV_FcRn+FcRn))-(Koff_FcRn*CLIV_E_B)-((LIV_CL_UP*CLIV_E_B)/LIV_EV)
+
+# Interstitial
+d/dt(CLIV_I) = (((1-LIV_VRC)*LIV_LF*CLIV_V)/LIV_IV)-(((1-LIV_ISRC)*LIV_LF*CLIV_I)/LIV_IV)+((LIV_CL_UP*(1-FR)*CLIV_E_B)/LIV_IV)-((LIV_CL_UP*CLIV_I)/LIV_IV)
+
+# Blood cell
+d/dt(CLIV_BC) = ((LIV_BCQ*CLU_BC)/LIV_BV)+((SI_BCQ*CSI_BC)/LIV_BV)+((LI_BCQ*CLI_BC)/LIV_BV)+((SP_BCQ*CSP_BC)/LIV_BV)+((PA_BCQ*CPA_BC)/LIV_BV)-(((LIV_BCQ+SI_BCQ+LI_BCQ+SP_BCQ+PA_BCQ)*CLIV_BC)/LIV_BV)
+
+
+#	BONE
+# ----
+
+# Vascular
+d/dt(CBO_V) = ((BO_PLQ*CLU_V)/BO_VV)-(((BO_PLQ-BO_LF)*CBO_V)/BO_VV)-(((1-BO_VRC)*BO_LF*CBO_V)/BO_VV)-((BO_CL_UP*CBO_V)/BO_VV)+((BO_CL_UP*FR*CBO_E_B)/BO_VV)
+
+# Endosomal
+d/dt(CBO_E_U) = ((BO_CL_UP*(CBO_V+CBO_I))/BO_EV)-(Kon_FcRn*CBO_E_U*(BO_FcRn+FcRn))+(Koff_FcRn*CBO_E_B)-(Kdeg_IgG*CBO_E_U)
+
+d/dt(CBO_E_B) = (Kon_FcRn*CBO_E_U*(BO_FcRn+FcRn))-(Koff_FcRn*CBO_E_B)-((BO_CL_UP*CBO_E_B)/BO_EV)
+
+# Interstitial
+d/dt(CBO_I) = (((1-BO_VRC)*BO_LF*CBO_V)/BO_IV)-(((1-BO_ISRC)*BO_LF*CBO_I)/BO_IV)+((BO_CL_UP*(1-FR)*CBO_E_B)/BO_IV)-((BO_CL_UP*CBO_I)/BO_IV)
+
+# Blood cell
+d/dt(CBO_BC) = ((BO_BCQ*(CLU_BC-CBO_BC))/BO_BV)
+
+
+#	OTHER
+# -----
+
+# Vascular
+d/dt(COT_V) = ((OTLN_PLQ*CLU_V)/OT_VV)-(((OTLN_PLQ-OT_LF)*COT_V)/OT_VV)-(((1-OT_VRC)*OT_LF*COT_V)/OT_VV)-((OT_CL_UP*COT_V)/OT_VV)+((OT_CL_UP*FR*COT_E_B)/OT_VV)
+
+# Endosomal
+d/dt(COT_E_U) = ((OT_CL_UP*(COT_V+COT_I))/OT_EV)-(Kon_FcRn*COT_E_U*(OT_FcRn+FcRn))+(Koff_FcRn*COT_E_B)-(Kdeg_IgG*COT_E_U)
+
+d/dt(COT_E_B) = (Kon_FcRn*COT_E_U*(OT_FcRn+FcRn))-(Koff_FcRn*COT_E_B)-((OT_CL_UP*COT_E_B)/OT_EV)
+
+# Interstitial
+d/dt(COT_I) = (((1-OT_VRC)*OT_LF*COT_V)/OT_IV)-(((1-OT_ISRC)*OT_LF*COT_I)/OT_IV)+((OT_CL_UP*(1-FR)*COT_E_B)/OT_IV)-((OT_CL_UP*COT_I)/OT_IV)
+
+# Blood cell
+d/dt(COT_BC) = ((OTLN_BCQ*(CLU_BC-COT_BC))/OT_BV)
+
+
+#	LYMPH NODE
+# ----------
+
+d/dt(CLN) = (((1-TUMOR_ISRC)*TUMOR_LF*CTUMOR_I)+((1-HE_ISRC)*HE_LF*CHE_I)+((1-KI_ISRC)*KI_LF*CKI_I)+((1-MU_ISRC)*MU_LF*CMU_I)+((1-SK_ISRC)*SK_LF*CSK_I)+((1-BR_ISRC)*BR_LF*CBR_I)+((1-AD_ISRC)*AD_LF*CAD_I)+((1-TH_ISRC)*TH_LF*CTH_I)+((1-BO_ISRC)*BO_LF*CBO_I)+((1-OT_ISRC)*OT_LF*COT_I)+((1-LIV_ISRC)*LIV_LF*CLIV_I)+((1-SI_ISRC)*SI_LF*CSI_I)+((1-LI_ISRC)*LI_LF*CLI_I)+((1-SP_ISRC)*SP_LF*CSP_I)+((1-PA_ISRC)*PA_LF*CPA_I)+((1-LU_ISRC)*LU_LF*CLU_I)-LN_LF*CLN)/LN_V
+
+
+
+# Equations for FcRn Interaction
+# ------------------------------
+
+d/dt(HE_FcRn) = (Koff_FcRn*CHE_E_B)-(Kon_FcRn*CHE_E_U*(HE_FcRn+FcRn))+((HE_CL_UP*CHE_E_B)/HE_EV)
+
+d/dt(KI_FcRn) = (Koff_FcRn*CKI_E_B)-(Kon_FcRn*CKI_E_U*(KI_FcRn+FcRn))+((KI_CL_UP*CKI_E_B)/KI_EV)
+
+d/dt(MU_FcRn) = (Koff_FcRn*CMU_E_B)-(Kon_FcRn*CMU_E_U*(MU_FcRn+FcRn))+((MU_CL_UP*CMU_E_B)/MU_EV)
+
+d/dt(SK_FcRn) = (Koff_FcRn*CSK_E_B)-(Kon_FcRn*CSK_E_U*(SK_FcRn+FcRn))+((SK_CL_UP*CSK_E_B)/SK_EV)
+
+d/dt(BR_FcRn) = (Koff_FcRn*CBR_E_B)-(Kon_FcRn*CBR_E_U*(BR_FcRn+FcRn))+((BR_CL_UP*CBR_E_B)/BR_EV)
+
+d/dt(AD_FcRn) = (Koff_FcRn*CAD_E_B)-(Kon_FcRn*CAD_E_U*(AD_FcRn+FcRn))+((AD_CL_UP*CAD_E_B)/AD_EV)
+
+d/dt(TH_FcRn) = (Koff_FcRn*CTH_E_B)-(Kon_FcRn*CTH_E_U*(TH_FcRn+FcRn))+((TH_CL_UP*CTH_E_B)/TH_EV)
+
+d/dt(SI_FcRn) = (Koff_FcRn*CSI_E_B)-(Kon_FcRn*CSI_E_U*(SI_FcRn+FcRn))+((SI_CL_UP*CSI_E_B)/SI_EV)
+
+d/dt(LI_FcRn) = (Koff_FcRn*CLI_E_B)-(Kon_FcRn*CLI_E_U*(LI_FcRn+FcRn))+((LI_CL_UP*CLI_E_B)/LI_EV)
+
+d/dt(SP_FcRn) = (Koff_FcRn*CSP_E_B)-(Kon_FcRn*CSP_E_U*(SP_FcRn+FcRn))+((SP_CL_UP*CSP_E_B)/SP_EV)
+
+d/dt(PA_FcRn) = (Koff_FcRn*CPA_E_B)-(Kon_FcRn*CPA_E_U*(PA_FcRn+FcRn))+((PA_CL_UP*CPA_E_B)/PA_EV)
+
+d/dt(LIV_FcRn) = (Koff_FcRn*CLIV_E_B)-(Kon_FcRn*CLIV_E_U*(LIV_FcRn+FcRn))+((LIV_CL_UP*CLIV_E_B)/LIV_EV)
+
+d/dt(BO_FcRn) = (Koff_FcRn*CBO_E_B)-(Kon_FcRn*CBO_E_U*(BO_FcRn+FcRn))+((BO_CL_UP*CBO_E_B)/BO_EV)
+
+d/dt(OT_FcRn) = (Koff_FcRn*COT_E_B)-(Kon_FcRn*COT_E_U*(OT_FcRn+FcRn))+((OT_CL_UP*COT_E_B)/OT_EV)
+
+d/dt(LU_FcRn) = (Koff_FcRn*CLU_E_B)-(Kon_FcRn*CLU_E_U*(LU_FcRn+FcRn))+((LU_CL_UP*CLU_E_B)/LU_EV)
+
+
+
+#	TUMOR RELATED EQUATIONS
+# -----------------------
+# Assumption: same equations as for all other tissues
+
+# Vascular
+d/dt(CTUMOR_V) = ((TUMOR_PLQ*CLU_V)/TUMOR_VV)-(((TUMOR_PLQ-TUMOR_LF)*CTUMOR_V)/TUMOR_VV)-(((1-TUMOR_VRC)*TUMOR_LF*CTUMOR_V)/TUMOR_VV)-((TUMOR_CL_UP*CTUMOR_V)/TUMOR_VV)+((TUMOR_CL_UP*FR*CTUMOR_E_B)/TUMOR_VV)
+
+# Endosomal
+d/dt(CTUMOR_E_U) = ((TUMOR_CL_UP*(CTUMOR_V+CTUMOR_I))/TUMOR_EV)-(Kon_FcRn*CTUMOR_E_U*(TUMOR_FcRn+FcRn))+(Koff_FcRn*CTUMOR_E_B)-(Kdeg_IgG*CTUMOR_E_U)
+
+d/dt(CTUMOR_E_B) = (Kon_FcRn*CTUMOR_E_U*(TUMOR_FcRn+FcRn))-(Koff_FcRn*CTUMOR_E_B)-((TUMOR_CL_UP*CTUMOR_E_B)/TUMOR_EV)
+
+# Interstitial
+d/dt(CTUMOR_I) = (((1-TUMOR_VRC)*TUMOR_LF*CTUMOR_V)/TUMOR_IV)-(((1-TUMOR_ISRC)*TUMOR_LF*CTUMOR_I)/TUMOR_IV)+((TUMOR_CL_UP*(1-FR)*CTUMOR_E_B)/TUMOR_IV)-((TUMOR_CL_UP*CTUMOR_I)/TUMOR_IV)
+
+# Blood cell
+d/dt(CTUMOR_BC) = ((TUMOR_BCQ*(CLU_BC-CTUMOR_BC))/TUMOR_BV)
+
+# FcRn Interaction
+d/dt(TUMOR_FcRn) = (Koff_FcRn*CTUMOR_E_B)-(Kon_FcRn*CTUMOR_E_U*(TUMOR_FcRn+FcRn))+((TUMOR_CL_UP*CTUMOR_E_B)/TUMOR_EV)
+
+
+
+********** MODEL PARAMETERS
+
+# Drug information
+# ----------------
+
+MW               = 150000      # (Da) Molecular weight of large molecule
+
+# Bodyweight information for scaling
+# ----------
+
+WEIGHT           = 0.028       # (kg) Bodyweight as covariate
+WEIGHT_NOM       = 0.028       # (kg) Reference/nominal bodyweight
+nRATEWeight      = 0.75        # (.) Allometric coefficient for bodyweight on flow rates
+nVOLUMEWeight    = 1           # (.) Allometric coefficient for bodyweight on rate parameters
+
+# Estimated parameters in paper
+# -----------------------------
+
+FcRn             = 4.98e-05    # (M) FcRn concentration in the endosomal space
+CL_UP            = 0.0366      # (L/h/L) Rate of pinocytosis and exocytosis per unit endosomal space of vascular endothelia
+Kdeg_IgG         = 42.9        # (1/h) Rate at which FcRn unbound IgG antibody molecules are degraded in the endosomal space - nominal bodyweight
+C_LNLF           = 9.1         # (.) Proportionality constant between the rate at which antibody transfers
+                               #     from the lymph node compartment to the plasma/blood compartment
+
+# Other parameters
+# ------------------
+
+RATIOPB          = 1.222222    # (.) Ration Plasma/Blood Cell flow
+
+FR               = 0.715       # (.) Fraction recycled to plasma
+
+# Binding IgG/FcRn - Mouse values
+Kon_FcRn         = 8.06e7        # (1/M/h) Association rate constant between IgG and FcRn
+Koff_FcRn        = 6.55          # (1/h) Dissociation rate constant of IgG-FcRn
+
+
+# Tumor parameters
+# ----------------
+# Nominal volumes and flows for nominal weight
+# Set TUMOR_PLQ=0 and TUMOR_EV=1e-10 to switch off tumor
+TUMOR_TV_NOM     = 0.000472            # (L) TUMOR Total Volume
+TUMOR_VV_NOM     = 0.00003304          # (L) TUMOR Plasma volume (assumed 7 percent of total volume)
+TUMOR_EV_NOM     = 0.00000236          # (L) TUMOR Endosomal volume (assumed 0.5 percent of total volume)
+TUMOR_IV_NOM     = 0.0002596           # (L) TUMOR Interstitial volume (assumed 55 percent of total volume)
+TUMOR_PLQ_NOM    = 0.0059944           # (L/h) TUMOR Plasma flow (12.7 L/h/L tumor volume)
+TUMOR_VRC        = 0.842               # (.) TUMOR Vascular reflection coefficient
+TUMOR_ISRC       = 0.2                 # (.) TUMOR Lymphatic reflection coefficient
+
+
+# Volume parameters - mouse (28g male)
+# ------------------------------------
+
+# Nominal values subject to weight-based scaling
+
+# Plasma
+PL_TV_NOM        = 0.00094435          # (L) Total plasma volume (as reported in Shahs paper)
+
+# Lymph
+LN_V_NOM         = 0.000113            # (L) Lymph Total volume
+
+# Lung
+LU_TV_NOM        = 0.000204            # (L) Lung Total volume
+LU_VV_NOM        = 0.00002945509193    # (L) Lung Plasma volume
+LU_EV_NOM        = 0.0000010220365     # (L) Lung Endosomal volume
+LU_IV_NOM        = 0.0000384285724     # (L) Lung Interstitial volume
+
+# Heart
+HE_TV_NOM        = 0.000152            # (L) Heart Total volume
+HE_VV_NOM        = 0.000005852         # (L) Heart Plasma volume
+HE_EV_NOM        = 0.00000076          # (L) Heart Endosomal volume
+HE_IV_NOM        = 0.000021736         # (L) Heart Interstitial volume
+
+# Kidney
+KI_TV_NOM   = 0.000525            # (L) Kidney Total volume
+KI_VV_NOM   = 0.000028875         # (L) Kidney Plasma volume
+KI_EV_NOM   = 0.000002625         # (L) Kidney Endosomal volume
+KI_IV_NOM   = 0.00007875          # (L) Kidney Interstitial volume
+
+# Muscle
+MU_TV_NOM   = 0.0113              # (L) Muscle Total volume
+MU_VV_NOM   = 0.000249018         # (L) Muscle Plasma volume
+MU_EV_NOM   = 0.000056595         # (L) Muscle Endosomal volume
+MU_IV_NOM   = 0.00147147          # (L) Muscle Interstitial volume
+
+# Skin
+SK_TV_NOM   = 0.00502             # (L) Skin Total volume
+SK_VV_NOM   = 0.0001877106        # (L) Skin Plasma volume
+SK_EV_NOM   = 0.000025095         # (L) Skin Endosomal volume
+SK_IV_NOM   = 0.00165627          # (L) Skin Interstitial volume
+
+# Brain
+BR_TV_NOM   = 0.000485            # (L) Brain Total volume
+BR_VV_NOM   = 0.00001067          # (L) Brain Plasma volume
+BR_EV_NOM   = 0.000002425         # (L) Brain Endosomal volume
+BR_IV_NOM   = 0.0000873           # (L) Brain Interstitial volume
+
+# Adipose
+AD_TV_NOM   = 0.00198             # (L) Adipose Total volume
+AD_VV_NOM   = 0.000021802         # (L) Adipose Plasma volume
+AD_EV_NOM   = 0.00000991          # (L) Adipose Endosomal volume
+AD_IV_NOM   = 0.00033694          # (L) Adipose Interstitial volume
+
+# Thymus
+TH_TV_NOM   = 0.000009            # (L) Thymus Total volume
+TH_VV_NOM   = 0.000000495         # (L) Thymus Plasma volume
+TH_EV_NOM   = 0.000000045         # (L) Thymus Endosomal volume
+TH_IV_NOM   = 0.00000153          # (L) Thymus Interstitial volume
+
+# Small intestine
+SI_TV_NOM   = 0.000728            # (L) Small intestine Total volume
+SI_VV_NOM   = 0.0000116116        # (L) Small intestine Plasma volume
+SI_EV_NOM   = 0.00000364          # (L) Small intestine Endosomal volume
+SI_IV_NOM   = 0.000126672         # (L) Small intestine Interstitial volume
+
+# Large intestine
+LI_TV_NOM   = 0.000314            # (L) Large intestine Total volume
+LI_VV_NOM   = 0.000005000325      # (L) Large intestine Plasma volume
+LI_EV_NOM   = 0.0000015675        # (L) Large intestine Endosomal volume
+LI_IV_NOM   = 0.000054549         # (L) Large intestine Interstitial volume
+
+# Spleen
+SP_TV_NOM   = 0.000127            # (L) Spleen Total volume
+SP_VV_NOM   = 0.000015367         # (L) Spleen Plasma volume
+SP_EV_NOM   = 0.000000635         # (L) Spleen Endosomal volume
+SP_IV_NOM   = 0.0000254           # (L) Spleen Interstitial volume
+
+# Pancreas
+PA_TV_NOM   = 0.0000977           # (L) Pancreas Total volume
+PA_VV_NOM   = 0.000005335         # (L) Pancreas Plasma volume
+PA_EV_NOM   = 0.000000485         # (L) Pancreas Endosomal volume
+PA_IV_NOM   = 0.000016878         # (L) Pancreas Interstitial volume
+
+# Liver
+LIV_TV_NOM  = 0.00193             # (L) Liver Total volume
+LIV_VV_NOM  = 0.00016410625       # (L) Liver Plasma volume
+LIV_EV_NOM  = 0.000009625         # (L) Liver Endosomal volume
+LIV_IV_NOM  = 0.000384595163      # (L) Liver Interstitial volume
+
+# Bone
+BO_TV_NOM   = 0.00282             # (L) Bone Total volume
+BO_VV_NOM   = 0.000062128         # (L) Bone Plasma volume
+BO_EV_NOM   = 0.00001412          # (L) Bone Endosomal volume
+BO_IV_NOM   = 0.000525264         # (L) Bone Interstitial volume
+
+# Other
+OT_TV_NOM   = 0.000465            # (L) Other Total volume
+OT_VV_NOM   = 0.000019535609097   # (L) Other Plasma volume
+OT_EV_NOM   = 0.000002326591      # (L) Other Endosomal volume
+OT_IV_NOM   = 0.0000797245183     # (L) Other Interstitial volume
+
+
+# Plasma flow parameters - mouse (28g male)
+# -----------------------------------------
+
+# Nominal plasma flows subject to weigh-based scaling
+HE_PLQ_NOM  = 0.0365              # (L/h) Heart Plasma flow
+KI_PLQ_NOM  = 0.0685              # (L/h) Kidney Plasma flow
+MU_PLQ_NOM  = 0.0861              # (L/h) Muscle Plasma flow
+SK_PLQ_NOM  = 0.0278              # (L/h) Skin Plasma flow
+BR_PLQ_NOM  = 0.0118              # (L/h) Brain Plasma flow
+AD_PLQ_NOM  = 0.0134              # (L/h) Adipose Plasma flow
+TH_PLQ_NOM  = 0.00119             # (L/h) Thymus Plasma flow
+SI_PLQ_NOM  = 0.0581              # (L/h) Small Intestine Plasma flow
+LI_PLQ_NOM  = 0.0173              # (L/h) Large Intestine Plasma flow
+SP_PLQ_NOM  = 0.00818             # (L/h) Spleen Plasma flow
+PA_PLQ_NOM  = 0.00624             # (L/h) Pancreas Plasma flow
+LIV_PLQ_NOM = 0.0103              # (L/h) Liver Plasma flow
+BO_PLQ_NOM  = 0.0152              # (L/h) Bone Plasma flow
+OT_PLQ_NOM  = 0.0109              # (L/h) Other Plasma flow
+LN_PLQ_NOM  = 0.00165             # (L/h) Lymph Node Plasma flow
+
+
+# Vascular reflection coefficients
+# -----------------------------------------
+
+HE_VRC      = 0.95                # (.) Heart Vascular reflection coefficient
+KI_VRC      = 0.9                 # (.) Kidney Vascular reflection coefficient
+MU_VRC      = 0.95                # (.) Muscle Vascular reflection coefficient
+SK_VRC      = 0.95                # (.) Skin Vascular reflection coefficient
+BR_VRC      = 0.99                # (.) Brain Vascular reflection coefficient
+AD_VRC      = 0.95                # (.) Adipose Vascular reflection coefficient
+TH_VRC      = 0.9                 # (.) Tyhmus Vascular reflection coefficient
+SI_VRC      = 0.9                 # (.) Small Intestine Vascular reflection coefficient
+LI_VRC      = 0.95                # (.) Large Intestine Vascular reflection coefficient
+SP_VRC      = 0.85                # (.) Spleen Vascular reflection coefficient
+PA_VRC      = 0.9                 # (.) Pancreas Vascular reflection coefficient
+LIV_VRC     = 0.85                # (.) Liver Vascular reflection coefficient
+BO_VRC      = 0.85                # (.) Bone Vascular reflection coefficient
+OT_VRC      = 0.95                # (.) Other Vascular reflection coefficient
+LU_VRC      = 0.95                # (.) Lung Vascular reflection coefficient
+
+
+# Lymphatic reflection coefficients
+# -----------------------------------------
+
+HE_ISRC     = 0.2                 # (.) Heart Lymphatic reflection coefficient
+KI_ISRC     = 0.2                 # (.) Kidney Lymphatic reflection coefficient
+MU_ISRC     = 0.2                 # (.) Muscle Lymphatic reflection coefficient
+SK_ISRC     = 0.2                 # (.) Skin Lymphatic reflection coefficient
+BR_ISRC     = 0.2                 # (.) Brain Lymphatic reflection coefficient
+AD_ISRC     = 0.2                 # (.) Adipose Lymphatic reflection coefficient
+TH_ISRC     = 0.2                 # (.) Tyhmus Lymphatic reflection coefficient
+SI_ISRC     = 0.2                 # (.) Small Intestine Lymphatic reflection coefficient
+LI_ISRC     = 0.2                 # (.) Large Intestine Lymphatic reflection coefficient
+SP_ISRC     = 0.2                 # (.) Spleen Lymphatic reflection coefficient
+PA_ISRC     = 0.2                 # (.) Pancreas Lymphatic reflection coefficient
+LIV_ISRC    = 0.2                 # (.) Liver Lymphatic reflection coefficient
+BO_ISRC     = 0.2                 # (.) Bone Lymphatic reflection coefficient
+OT_ISRC     = 0.2                 # (.) Other Lymphatic reflection coefficient
+LU_ISRC     = 0.2                 # (.) Lung Lymphatic reflection coefficient
+
+
+********** MODEL VARIABLES
+
+# Determine plasma and blood cell volume
+# --------------------------------------
+PL_V_NOM          = PL_TV_NOM - LU_VV_NOM - HE_VV_NOM - KI_VV_NOM - MU_VV_NOM - SK_VV_NOM - BR_VV_NOM - AD_VV_NOM - TH_VV_NOM - SI_VV_NOM - LI_VV_NOM - SP_VV_NOM - PA_VV_NOM - LIV_VV_NOM - BO_VV_NOM - OT_VV_NOM
+
+
+# Combine Other Tissue and Lymph Node plasma flow
+# -----------------------------------------------
+OTLN_PLQ_NOM = OT_PLQ_NOM + LN_PLQ_NOM
+
+
+# Determination of Lung Plasma flow (nominal)
+# -------------------------------------------
+# Include the tumor plasma flow
+
+LU_PLQ_NOM = HE_PLQ_NOM + KI_PLQ_NOM + MU_PLQ_NOM + SK_PLQ_NOM + BR_PLQ_NOM + AD_PLQ_NOM + TH_PLQ_NOM + SI_PLQ_NOM + LI_PLQ_NOM + SP_PLQ_NOM + PA_PLQ_NOM + LIV_PLQ_NOM + BO_PLQ_NOM + OTLN_PLQ_NOM + TUMOR_PLQ_NOM
+
+
+# Weight scaling of Plasma flow parameters
+# ----------------------------------------
+
+HE_PLQ      = HE_PLQ_NOM * (WEIGHT/WEIGHT_NOM)^(nRATEWeight)    # (L/h) Heart Plasma flow - weight scaled
+KI_PLQ      = KI_PLQ_NOM * (WEIGHT/WEIGHT_NOM)^(nRATEWeight)    # (L/h) Kidney Plasma flow - weight scaled
+MU_PLQ      = MU_PLQ_NOM * (WEIGHT/WEIGHT_NOM)^(nRATEWeight)    # (L/h) Muscle Plasma flow - weight scaled
+SK_PLQ      = SK_PLQ_NOM * (WEIGHT/WEIGHT_NOM)^(nRATEWeight)    # (L/h) Skin Plasma flow - weight scaled
+BR_PLQ      = BR_PLQ_NOM * (WEIGHT/WEIGHT_NOM)^(nRATEWeight)    # (L/h) Brain Plasma flow - weight scaled
+AD_PLQ      = AD_PLQ_NOM * (WEIGHT/WEIGHT_NOM)^(nRATEWeight)    # (L/h) Adipose Plasma flow - weight scaled
+TH_PLQ      = TH_PLQ_NOM * (WEIGHT/WEIGHT_NOM)^(nRATEWeight)    # (L/h) Thymus Plasma flow - weight scaled
+SI_PLQ      = SI_PLQ_NOM * (WEIGHT/WEIGHT_NOM)^(nRATEWeight)    # (L/h) Small Intestine Plasma flow - weight scaled
+LI_PLQ      = LI_PLQ_NOM * (WEIGHT/WEIGHT_NOM)^(nRATEWeight)    # (L/h) Large Intestine Plasma flow - weight scaled
+SP_PLQ      = SP_PLQ_NOM * (WEIGHT/WEIGHT_NOM)^(nRATEWeight)    # (L/h) Spleen Plasma flow - weight scaled
+PA_PLQ      = PA_PLQ_NOM * (WEIGHT/WEIGHT_NOM)^(nRATEWeight)    # (L/h) Pancreas Plasma flow - weight scaled
+LIV_PLQ     = LIV_PLQ_NOM * (WEIGHT/WEIGHT_NOM)^(nRATEWeight)   # (L/h) Liver Plasma flow - weight scaled
+BO_PLQ      = BO_PLQ_NOM * (WEIGHT/WEIGHT_NOM)^(nRATEWeight)    # (L/h) Bone Plasma flow - weight scaled
+OTLN_PLQ    = OTLN_PLQ_NOM * (WEIGHT/WEIGHT_NOM)^(nRATEWeight)  # (L/h) Other + Lymph Node Plasma flow - weight scaled
+TUMOR_PLQ   = TUMOR_PLQ_NOM * (WEIGHT/WEIGHT_NOM)^(nRATEWeight) # (L/h) Tumor Plasma flow - weight scaled
+LU_PLQ      = LU_PLQ_NOM * (WEIGHT/WEIGHT_NOM)^(nRATEWeight)    # (L/h) Lung Plasma flow - weight scaled
+
+
+
+# Weight scaling of volume parameters
+# -----------------------------------
+
+PL_V        = PL_V_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)          # (L) Plasma volume
+LN_V        = LN_V_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)          # (L) Lymph Total volume
+LU_TV       = LU_TV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) Lung Total volume
+LU_VV       = LU_VV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) Lung Plasma volume
+LU_EV       = LU_EV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) Lung Endosomal volume
+LU_IV       = LU_IV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) Lung Interstitial volume
+HE_TV       = HE_TV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) Heart Total volume
+HE_VV       = HE_VV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) Heart Plasma volume
+HE_EV       = HE_EV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) Heart Endosomal volume
+HE_IV       = HE_IV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) Heart Interstitial volume
+KI_TV       = KI_TV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) Kidney Total volume
+KI_VV       = KI_VV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) Kidney Plasma volume
+KI_EV       = KI_EV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) Kidney Endosomal volume
+KI_IV       = KI_IV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) Kidney Interstitial volume
+MU_TV       = MU_TV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) Muscle Total volume
+MU_VV       = MU_VV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) Muscle Plasma volume
+MU_EV       = MU_EV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) Muscle Endosomal volume
+MU_IV       = MU_IV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) Muscle Interstitial volume
+SK_TV       = SK_TV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) Skin Total volume
+SK_VV       = SK_VV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) Skin Plasma volume
+SK_EV       = SK_EV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) Skin Endosomal volume
+SK_IV       = SK_IV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) Skin Interstitial volume
+BR_TV       = BR_TV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) Brain Total volume
+BR_VV       = BR_VV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) Brain Plasma volume
+BR_EV       = BR_EV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) Brain Endosomal volume
+BR_IV       = BR_IV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) Brain Interstitial volume
+AD_TV       = AD_TV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) Adipose Total volume
+AD_VV       = AD_VV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) Adipose Plasma volume
+AD_EV       = AD_EV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) Adipose Endosomal volume
+AD_IV       = AD_IV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) Adipose Interstitial volume
+TH_TV       = TH_TV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) Thymus Total volume
+TH_VV       = TH_VV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) Thymus Plasma volume
+TH_EV       = TH_EV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) Thymus Endosomal volume
+TH_IV       = TH_IV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) Thymus Interstitial volume
+SI_TV       = SI_TV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) Small intestine Total volume
+SI_VV       = SI_VV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) Small intestine Plasma volume
+SI_EV       = SI_EV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) Small intestine Endosomal volume
+SI_IV       = SI_IV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) Small intestine Interstitial volume
+LI_TV       = LI_TV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) Large intestine Total volume
+LI_VV       = LI_VV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) Large intestine Plasma volume
+LI_EV       = LI_EV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) Large intestine Endosomal volume
+LI_IV       = LI_IV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) Large intestine Interstitial volume
+SP_TV       = SP_TV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) Spleen Total volume
+SP_VV       = SP_VV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) Spleen Plasma volume
+SP_EV       = SP_EV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) Spleen Endosomal volume
+SP_IV       = SP_IV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) Spleen Interstitial volume
+PA_TV       = PA_TV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) Pancreas Total volume
+PA_VV       = PA_VV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) Pancreas Plasma volume
+PA_EV       = PA_EV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) Pancreas Endosomal volume
+PA_IV       = PA_IV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) Pancreas Interstitial volume
+LIV_TV      = LIV_TV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)        # (L) Liver Total volume
+LIV_VV      = LIV_VV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)        # (L) Liver Plasma volume
+LIV_EV      = LIV_EV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)        # (L) Liver Endosomal volume
+LIV_IV      = LIV_IV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)        # (L) Liver Interstitial volume
+BO_TV       = BO_TV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) Bone Total volume
+BO_VV       = BO_VV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) Bone Plasma volume
+BO_EV       = BO_EV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) Bone Endosomal volume
+BO_IV       = BO_IV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) Bone Interstitial volume
+OT_TV       = OT_TV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) Other Total volume
+OT_VV       = OT_VV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) Other Plasma volume
+OT_EV       = OT_EV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) Other Endosomal volume
+OT_IV       = OT_IV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) Other Interstitial volume
+TUMOR_TV    = TUMOR_TV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) TUMOR Total volume
+TUMOR_VV    = TUMOR_VV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) TUMOR Plasma volume
+TUMOR_EV    = TUMOR_EV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) TUMOR Endosomal volume
+TUMOR_IV    = TUMOR_IV_NOM * (WEIGHT/WEIGHT_NOM)^(nVOLUMEWeight)         # (L) TUMOR Interstitial volume
+
+# C_LNLF
+# ------
+
+LN_LF       = C_LNLF*LU_PLQ # (L/h) C_LNLF: Proportionality constant between the rate at which antibody transfers
+                            # from the lymph node compartment to the plasma/blood compartment
+                            # and the plasma flow of the given species
+
+
+# Blood cell volumes - determined as plasma volumes / RATIOPB
+# -----------------------------------------------------------------
+
+BC_V        = PL_V/RATIOPB      # (L) Blood volume
+LU_BV       = LU_VV/RATIOPB     # (L) Lung Blood cell volume
+HE_BV       = HE_VV/RATIOPB     # (L) Heart Blood cell volume
+KI_BV       = KI_VV/RATIOPB     # (L) Kidney Blood cell volume
+MU_BV       = MU_VV/RATIOPB     # (L) Muscle Blood cell volume
+SK_BV       = SK_VV/RATIOPB     # (L) Skin Blood cell volume
+BR_BV       = BR_VV/RATIOPB     # (L) Brain Blood cell volume
+AD_BV       = AD_VV/RATIOPB     # (L) Adipose Blood cell volume
+TH_BV       = TH_VV/RATIOPB     # (L) Thymus Blood cell volume
+SI_BV       = SI_VV/RATIOPB     # (L) Small intestine Blood cell volume
+LI_BV       = LI_VV/RATIOPB     # (L) Large intestine Blood cell volume
+SP_BV       = SP_VV/RATIOPB     # (L) Spleen Blood cell volume
+PA_BV       = PA_VV/RATIOPB     # (L) Pancreas Blood cell volume
+LIV_BV      = LIV_VV/RATIOPB    # (L) Liver Blood cell volume
+BO_BV       = BO_VV/RATIOPB     # (L) Bone Blood cell volume
+OT_BV       = OT_VV/RATIOPB     # (L) Other Blood cell volume
+TUMOR_BV    = TUMOR_VV/RATIOPB   # (L) TUMOR Blood cell volume
+
+
+# Cellular volumes - determined as total volume - rest
+# ----------------------------------------------------
+
+LU_CV       = LU_TV - LU_VV - LU_EV - LU_IV - LU_BV       # (L) Lung Cellular volume
+HE_CV       = HE_TV - HE_VV - HE_EV - HE_IV - HE_BV       # (L) Heart Cellular volume
+KI_CV       = KI_TV - KI_VV - KI_EV - KI_IV - KI_BV       # (L) Kidney Cellular volume
+MU_CV       = MU_TV - MU_VV - MU_EV - MU_IV - MU_BV       # (L) Muscle Cellular volume
+SK_CV       = SK_TV - SK_VV - SK_EV - SK_IV - SK_BV       # (L) Skin Cellular volume
+BR_CV       = BR_TV - BR_VV - BR_EV - BR_IV - BR_BV       # (L) Brain Cellular volume
+AD_CV       = AD_TV - AD_VV - AD_EV - AD_IV - AD_BV       # (L) Adipose Cellular volume
+TH_CV       = TH_TV - TH_VV - TH_EV - TH_IV - TH_BV       # (L) Thymus Cellular volume
+SI_CV       = SI_TV - SI_VV - SI_EV - SI_IV - SI_BV       # (L) Small intestine Cellular volume
+LI_CV       = LI_TV - LI_VV - LI_EV - LI_IV - LI_BV       # (L) Large intestine Cellular volume
+SP_CV       = SP_TV - SP_VV - SP_EV - SP_IV - SP_BV       # (L) Spleen Cellular volume
+PA_CV       = PA_TV - PA_VV - PA_EV - PA_IV - PA_BV       # (L) Pancreas Cellular volume
+LIV_CV      = LIV_TV - LIV_VV - LIV_EV - LIV_IV - LIV_BV  # (L) Liver Cellular volume
+BO_CV       = BO_TV - BO_VV - BO_EV - BO_IV - BO_BV       # (L) Bone Cellular volume
+OT_CV       = OT_TV - OT_VV - OT_EV - OT_IV - OT_BV       # (L) Other Cellular volume
+TUMOR_CV     = TUMOR_TV - TUMOR_VV - TUMOR_EV - TUMOR_IV - TUMOR_BV        # (L) TUMOR Cellular volume
+
+
+# Blood cell flow parameters - determined as plasma flow / RATIOPB
+# -----------------------------------------------------------------
+
+HE_BCQ      = HE_PLQ/RATIOPB    # (L/h) Heart Blood cell flow
+KI_BCQ      = KI_PLQ/RATIOPB    # (L/h) Kidney Blood cell flow
+MU_BCQ      = MU_PLQ/RATIOPB    # (L/h) Muscle Blood cell flow
+SK_BCQ      = SK_PLQ/RATIOPB    # (L/h) Skin Blood cell flow
+BR_BCQ      = BR_PLQ/RATIOPB    # (L/h) Brain Blood cell flow
+AD_BCQ      = AD_PLQ/RATIOPB    # (L/h) Adipose Blood cell flow
+TH_BCQ      = TH_PLQ/RATIOPB    # (L/h) Thymus Blood cell flow
+SI_BCQ      = SI_PLQ/RATIOPB    # (L/h) Small Intestine Blood cell flow
+LI_BCQ      = LI_PLQ/RATIOPB    # (L/h) Large Intestine Blood cell flow
+SP_BCQ      = SP_PLQ/RATIOPB    # (L/h) Spleen Blood cell flow
+PA_BCQ      = PA_PLQ/RATIOPB    # (L/h) Pancreas Blood cell flow
+LIV_BCQ     = LIV_PLQ/RATIOPB   # (L/h) Liver Blood cell flow
+BO_BCQ      = BO_PLQ/RATIOPB    # (L/h) Bone Blood cell flow
+OTLN_BCQ    = OTLN_PLQ/RATIOPB  # (L/h) Other + Lymph Node Blood cell flow
+LU_BCQ      = LU_PLQ/RATIOPB    # (L/h) Lung Blood cell flow
+TUMOR_BCQ   = TUMOR_PLQ/RATIOPB # (L/h) TUMOR Blood cell flow
+
+
+# Lymph flow determined 500 times lower than plasma flow
+# ------------------------------------------------------
+HE_LF       = HE_PLQ*0.002      # (L/h) Heart Lymph flow
+KI_LF       = KI_PLQ*0.002      # (L/h) Kidney Lymph flow
+MU_LF       = MU_PLQ*0.002      # (L/h) Muscle Lymph flow
+SK_LF       = SK_PLQ*0.002      # (L/h) Skin Lymph flow
+BR_LF       = BR_PLQ*0.002      # (L/h) Brain Lymph flow
+AD_LF       = AD_PLQ*0.002      # (L/h) Adipose Lymph flow
+TH_LF       = TH_PLQ*0.002      # (L/h) Tyhmus Lymph flow
+SI_LF       = SI_PLQ*0.002      # (L/h) Small Intestine Lymph flow
+LI_LF       = LI_PLQ*0.002      # (L/h) Large Intestine Lymph flow
+SP_LF       = SP_PLQ*0.002      # (L/h) Spleen Lymph flow
+PA_LF       = PA_PLQ*0.002      # (L/h) Pancreas Lymph flow
+LIV_LF      = ((LIV_PLQ)+(SI_PLQ-SI_LF)+(LI_PLQ-LI_LF)+(SP_PLQ-SP_LF)+(PA_PLQ-PA_LF))*0.002 # (L/h) Liver Lymph flow
+BO_LF       = BO_PLQ*0.002      # (L/h) Bone Lymph flow
+OT_LF       = OTLN_PLQ*0.002    # (L/h) Other Lymph flow
+LU_LF       = LU_PLQ*0.002      # (L/h) Lung Lymph flow
+TUMOR_LF    = TUMOR_PLQ*0.002   # (L/h) TUMOR Lymph flow
+
+
+# Rate of pinocytosis and exocytosis
+# ----------------------------------
+HE_CL_UP    = CL_UP*HE_EV       # (L/h) Heart Rate of pinocytosis and exocytosis
+KI_CL_UP    = CL_UP*KI_EV       # (L/h) Kidney Rate of pinocytosis and exocytosis
+MU_CL_UP    = CL_UP*MU_EV       # (L/h) Muscle Rate of pinocytosis and exocytosis
+SK_CL_UP    = CL_UP*SK_EV       # (L/h) Skin Rate of pinocytosis and exocytosis
+BR_CL_UP    = CL_UP*BR_EV       # (L/h) Brain Rate of pinocytosis and exocytosis
+AD_CL_UP    = CL_UP*AD_EV       # (L/h) Adipose Rate of pinocytosis and exocytosis
+TH_CL_UP    = CL_UP*TH_EV       # (L/h) Tyhmus Rate of pinocytosis and exocytosis
+SI_CL_UP    = CL_UP*SI_EV       # (L/h) Small Intestine Rate of pinocytosis and exocytosis
+LI_CL_UP    = CL_UP*LI_EV       # (L/h) Large Intestine Rate of pinocytosis and exocytosis
+SP_CL_UP    = CL_UP*SP_EV       # (L/h) Spleen Rate of pinocytosis and exocytosis
+PA_CL_UP    = CL_UP*PA_EV       # (L/h) Pancreas Rate of pinocytosis and exocytosis
+LIV_CL_UP   = CL_UP*LIV_EV      # (L/h) Liver Rate of pinocytosis and exocytosis
+BO_CL_UP    = CL_UP*BO_EV       # (L/h) Bone Rate of pinocytosis and exocytosis
+OT_CL_UP    = CL_UP*OT_EV       # (L/h) Other Rate of pinocytosis and exocytosis
+LU_CL_UP    = CL_UP*LU_EV       # (L/h) Lung Rate of pinocytosis and exocytosis
+TUMOR_CL_UP = CL_UP*TUMOR_EV    # (L/h) TUMOR Rate of pinocytosis and exocytosis
+
+
+
+# Outputs - all calculated to be in nM
+# ------------------------------------
+
+Plasma_nM        = CPL*(10^9)
+
+Lung_nM          = ((CLU_V*LU_VV+CLU_E_U*LU_EV+CLU_E_B*LU_EV+CLU_I*LU_IV+CLU_BC*LU_BV)/(LU_TV))*(10^9)
+
+Heart_nM         = ((CHE_V*HE_VV+CHE_E_U*HE_EV+CHE_E_B*HE_EV+CHE_I*HE_IV+CHE_BC*HE_BV)/(HE_TV))*(10^9)
+
+Kidney_nM        = ((CKI_V*KI_VV+CKI_E_U*KI_EV+CKI_E_B*KI_EV+CKI_I*KI_IV+CKI_BC*KI_BV)/(KI_TV))*(10^9)
+
+Muscle_nM        = ((CMU_V*MU_VV+CMU_E_U*MU_EV+CMU_E_B*MU_EV+CMU_I*MU_IV+CMU_BC*MU_BV)/(MU_TV))*(10^9)
+
+Skin_nM          = ((CSK_V*SK_VV+CSK_E_U*SK_EV+CSK_E_B*SK_EV+CSK_I*SK_IV+CSK_BC*SK_BV)/(SK_TV))*(10^9)
+
+Small_Int_nM     = ((CSI_V*SI_VV+CSI_E_U*SI_EV+CSI_E_B*SI_EV+CSI_I*SI_IV+CSI_BC*SI_BV)/(SI_TV))*(10^9)
+
+Large_Int_nM     = ((CLI_V*LI_VV+CLI_E_U*LI_EV+CLI_E_B*LI_EV+CLI_I*LI_IV+CLI_BC*LI_BV)/(LI_TV))*(10^9)
+
+Spleen_nM        = ((CSP_V*SP_VV+CSP_E_U*SP_EV+CSP_E_B*SP_EV+CSP_I*SP_IV+CSP_BC*SP_BV)/(SP_TV))*(10^9)
+
+Liver_nM         = ((CLIV_V*LIV_VV+CLIV_E_U*LIV_EV+CLIV_E_B*LIV_EV+CLIV_I*LIV_IV+CLIV_BC*LIV_BV)/(LIV_TV))*(10^9)
+
+TUMOR_nM         = ((CTUMOR_V*TUMOR_VV+CTUMOR_E_U*TUMOR_EV+CTUMOR_E_B*TUMOR_EV+CTUMOR_I*TUMOR_IV+CTUMOR_BC*TUMOR_BV)/(TUMOR_TV))*(10^9)
+
+
+# Specific outputs - in ug/mL to allow for parameter estimation with standard datasets
+# ------------------------------------------------------------------------------------
+# Conversion to ug/mL done with factor MW*1000
+
+Plasma_ugmL      = CPL * MW * 1000
+OUTPUT1          = Plasma_ugmL
+
+********** MODEL REACTIONS
+
+
+********** MODEL FUNCTIONS
+
+
+********** MODEL EVENTS
+
+
+
