@@ -217,3 +217,4 @@ print(IQRggplot(simPlot) +
         ylab("Concentration [nM]") +
         xlab("Time [Days]") )
 
+run_IQRsim()
